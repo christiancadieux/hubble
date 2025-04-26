@@ -17,6 +17,9 @@ const (
 	// ClusterMeshHealthPort is the default value for option.ClusterMeshHealthPort
 	ClusterMeshHealthPort = 80
 
+	// EnableGops is the default value for option.EnableGops
+	EnableGops = true
+
 	// GopsPortAgent is the default value for option.GopsPort in the agent
 	GopsPortAgent = 9890
 
@@ -50,7 +53,7 @@ const (
 	// StateDirRights are the default access rights of the state directory
 	StateDirRights = 0770
 
-	//StateDir is the default path for the state directory relative to RuntimePath
+	// StateDir is the default path for the state directory relative to RuntimePath
 	StateDir = "state"
 
 	// TemplatesDir is the default path for the compiled template objects relative to StateDir
@@ -109,7 +112,7 @@ const (
 	// for each FQDN selector in endpoint's restored DNS rules.
 	DNSMaxIPsPerRestoredRule = 1000
 
-	// FFQDNRegexCompileLRUSize defines the maximum size for the FQDN regex
+	// FQDNRegexCompileLRUSize defines the maximum size for the FQDN regex
 	// compilation LRU used by the DNS proxy and policy validation.
 	FQDNRegexCompileLRUSize = 1024
 
@@ -132,7 +135,7 @@ const (
 
 	// FQDNProxyResponseMaxDelay The maximum time the DNS proxy holds an allowed
 	// DNS response before sending it along. Responses are sent as soon as the
-	//datapath is updated with the new IP information.
+	// datapath is updated with the new IP information.
 	FQDNProxyResponseMaxDelay = 100 * time.Millisecond
 
 	// ToFQDNsPreCache is a path to a file with DNS cache data to insert into the
@@ -177,17 +180,6 @@ const (
 	// MaxInternalTimerDelay does not enforce a maximum on timer values in
 	// the agent by default.
 	MaxInternalTimerDelay = 0 * time.Second
-
-	// StatusCollectorInterval is the interval between a probe invocations
-	StatusCollectorInterval = 5 * time.Second
-
-	// StatusCollectorWarningThreshold is the duration after which a probe
-	// is declared as stale
-	StatusCollectorWarningThreshold = 15 * time.Second
-
-	// StatusCollectorFailureThreshold is the duration after which a probe
-	// is considered failed
-	StatusCollectorFailureThreshold = 1 * time.Minute
 
 	// SessionAffinityTimeoutMaxFallback defines the maximum number of seconds
 	// for the session affinity timeout. See also lb{4,6}_affinity_timeout().
@@ -310,10 +302,6 @@ const (
 	// a kvstore path for too long.
 	KVStoreStaleLockTimeout = 30 * time.Second
 
-	// KVstorePodNetworkSupport represents whether to enable the support for
-	// running the Cilium KVstore in pod network.
-	KVstorePodNetworkSupport = false
-
 	// KVstoreQPS is default rate limit for kv store operations
 	KVstoreQPS = 20
 
@@ -327,10 +315,6 @@ const (
 	// AllocatorListTimeout specifies the standard time to allow for listing
 	// initial allocator state from kvstore before exiting.
 	AllocatorListTimeout = 3 * time.Minute
-
-	// K8sWatcherEndpointSelector specifies the k8s endpoints that Cilium
-	// should watch for.
-	K8sWatcherEndpointSelector = "metadata.name!=kube-scheduler,metadata.name!=kube-controller-manager,metadata.name!=etcd-operator,metadata.name!=gcp-controller-manager"
 
 	// ConntrackGCMaxLRUInterval is the maximum conntrack GC interval when using LRU maps
 	ConntrackGCMaxLRUInterval = 12 * time.Hour
@@ -369,10 +353,6 @@ const (
 	// KVstoreMaxConsecutiveQuorumErrors is the maximum number of acceptable
 	// kvstore consecutive quorum errors before the agent assumes permanent failure
 	KVstoreMaxConsecutiveQuorumErrors = 2
-
-	// KVstoreKeepAliveIntervalFactor is the factor to calculate the interval
-	// from KVstoreLeaseTTL in which KVstore lease is being renewed.
-	KVstoreKeepAliveIntervalFactor = 3
 
 	// LockLeaseTTL is the time-to-live of the lease dedicated for locks of Kvstore.
 	LockLeaseTTL = 25 * time.Second
@@ -419,6 +399,9 @@ const (
 	// per GC interval
 	ENIGarbageCollectionMaxPerInterval = 25
 
+	// ENIMaxResultsPerApiCall is the maximum number of ENI objects to fetch per DescribeNetworkInterfaces API call
+	ENIMaxResultsPerApiCall = 1000
+
 	// ParallelAllocWorkers is the default max number of parallel workers doing allocation in the operator
 	ParallelAllocWorkers = 50
 
@@ -457,21 +440,21 @@ const (
 	// RestoreV6Addr is used as match for cilium_host v6 (router) address
 	RestoreV6Addr = "cilium.v6.internal.raw "
 
-	// EnableWellKnownIdentities is enabled by default as this is the
-	// original behavior. New default Helm templates will disable this.
-	EnableWellKnownIdentities = true
-
 	// CertsDirectory is the default directory used to find certificates
 	// specified in the L7 policies.
 	CertsDirectory = RuntimePath + "/certs"
 
-	// IPAMExpiration is the timeout after which an IP subject to expiratio
+	// IPAMExpiration is the timeout after which an IP subject to expiration
 	// is being released again if no endpoint is being created in time.
 	IPAMExpiration = 10 * time.Minute
 
 	// EnableIPv4FragmentsTracking enables IPv4 fragments tracking for
 	// L4-based lookups
 	EnableIPv4FragmentsTracking = true
+
+	// EnableIPv6FragmentsTracking enables IPv6 fragments tracking for
+	// L4-based lookups
+	EnableIPv6FragmentsTracking = true
 
 	// FragmentsMapEntries is the default number of entries allowed in an
 	// the map used to track datagram fragments.
@@ -484,11 +467,6 @@ const (
 	// EnableIdentityMark enables setting identity in mark field of packet
 	// for local traffic
 	EnableIdentityMark = true
-
-	// EnableHighScaleIPcache enables the special ipcache mode for high scale
-	// clusters. The ipcache content will be reduced to the strict minimum and
-	// traffic will be encapsulated to carry security identities.
-	EnableHighScaleIPcache = false
 
 	// K8sEnableLeasesFallbackDiscovery enables k8s to fallback to API probing to check
 	// for the support of Leases in Kubernetes when there is an error in discovering
@@ -521,6 +499,9 @@ const (
 	// TunnelSourcePortRange specifies the default tunnel source port range. Both
 	// zero means that we rely on the kernel driver defaults.
 	TunnelSourcePortRange = "0-0"
+
+	// UnderlayProtocol is the default IP family for the underlay.
+	UnderlayProtocol = "ipv4"
 
 	// ServiceNoBackendResponse is the default response for services without backends
 	ServiceNoBackendResponse = "reject"
@@ -592,6 +573,15 @@ const (
 
 	// EnableSourceIPVerification is the default value for source ip validation
 	EnableSourceIPVerification = true
+
+	// BGPRouterIDAllocationMode is default BGP router-id allocation mode
+	BGPRouterIDAllocationMode = "default"
+
+	// WireguardTrackAllIPsFallback forces the WireGuard agent to track all IPs.
+	WireguardTrackAllIPsFallback = false
+
+	// ConnectivityProbeFrequencyRatio is the default connectivity probe frequency
+	ConnectivityProbeFrequencyRatio = 0.5
 )
 
 var (
@@ -605,7 +595,6 @@ var (
 		// cilium_ipcache is the likely the most useful use of this feature, but also has
 		// the highest churn.
 		"cilium_ipcache":           "enabled,1024,0",
-		"cilium_tunnel_map":        "enabled,128,0",
 		"cilium_lb_affinity_match": "enabled,128,0",
 
 		// ip4

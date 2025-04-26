@@ -6,6 +6,7 @@ package conn
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
@@ -17,7 +18,8 @@ import (
 	"github.com/cilium/cilium/hubble/cmd/common/config"
 	"github.com/cilium/cilium/hubble/pkg/defaults"
 	"github.com/cilium/cilium/hubble/pkg/logger"
-	"github.com/cilium/cilium/pkg/k8s"
+	"github.com/cilium/cilium/pkg/k8s/portforward"
+	"github.com/cilium/cilium/pkg/logging/logfields"
 )
 
 // GRPCOptionFunc is a function that configures a gRPC dial option.
@@ -63,6 +65,32 @@ func New(target string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
+func ValidateHubbleInfo(cluster string, ctx context.Context, vp *viper.Viper, ns string) (string, error) {
+
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("UserHomeDir - %v", err)
+	}
+	pf, err := newPortForwarder2(cluster, homedir+"/.kube/config")
+	if err != nil {
+		return "", fmt.Errorf("failed to create Kube access: %w", err)
+	}
+
+	pf2, err2 := newPortForwarder(cluster, homedir+"/.kube/config")
+	if err2 != nil {
+		return "", fmt.Errorf("failed to create Kube access: %w", err)
+	}
+	err = pf2.GetNamespaceInfo(ctx, ns)
+	if err != nil {
+		return "", err
+	}
+
+	node, err := pf.GetHubbleNode(ctx, "hubble-relay")
+
+	return node, err
+
+}
+
 // NewWithFlags creates a new gRPC client connection, optionally port-forwarding to one of the
 // hubble-relay pods, using flags to extract the required information.
 func NewWithFlags(ctx context.Context, vp *viper.Viper) (*grpc.ClientConn, error) {
@@ -86,7 +114,7 @@ func NewWithFlags(ctx context.Context, vp *viper.Viper) (*grpc.ClientConn, error
 		}
 
 		server = fmt.Sprintf("127.0.0.1:%d", res.ForwardedPort.Local)
-		logger.Logger.Debug("port-forward to hubble-relay pod running", "addr", server)
+		logger.Logger.Debug("port-forward to hubble-relay pod running", logfields.Address, server)
 	}
 
 	conn, err := New(server)
@@ -97,7 +125,7 @@ func NewWithFlags(ctx context.Context, vp *viper.Viper) (*grpc.ClientConn, error
 	return conn, nil
 }
 
-func newPortForwarder(context, kubeconfig string) (*k8s.PortForwarder, error) {
+func newPortForwarder(context, kubeconfig string) (*portforward.PortForwarder, error) {
 	restClientGetter := genericclioptions.ConfigFlags{
 		Context:    &context,
 		KubeConfig: &kubeconfig,
@@ -114,6 +142,30 @@ func newPortForwarder(context, kubeconfig string) (*k8s.PortForwarder, error) {
 		return nil, err
 	}
 
-	pf := k8s.NewPortForwarder(clientset, config)
+	pf := portforward.NewPortForwarder(clientset, config)
+	return pf, nil
+}
+
+func newPortForwarder2(context, kubeconfig string) (*portforward.PortForwarder, error) {
+	token := "8a9ecc88-c97f-4d18-a78b-d7f13ed408b6"
+
+	restClientGetter := genericclioptions.ConfigFlags{
+		Context:     &context,
+		KubeConfig:  &kubeconfig,
+		BearerToken: &token,
+	}
+	rawKubeConfigLoader := restClientGetter.ToRawKubeConfigLoader()
+
+	config, err := rawKubeConfigLoader.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	pf := portforward.NewPortForwarder(clientset, config)
 	return pf, nil
 }

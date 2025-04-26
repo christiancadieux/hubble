@@ -4,6 +4,7 @@
 package observe
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -33,6 +34,7 @@ import (
 	"github.com/cilium/cilium/hubble/pkg/logger"
 	hubprinter "github.com/cilium/cilium/hubble/pkg/printer"
 	hubtime "github.com/cilium/cilium/hubble/pkg/time"
+	"github.com/cilium/cilium/pkg/logging/logfields"
 	monitorAPI "github.com/cilium/cilium/pkg/monitor/api"
 )
 
@@ -85,12 +87,14 @@ var flowEventTypeSubtypes = map[string][]string{
 		monitorAPI.TraceObservationPoints[monitorAPI.TraceFromOverlay],
 		monitorAPI.TraceObservationPoints[monitorAPI.TraceFromProxy],
 		monitorAPI.TraceObservationPoints[monitorAPI.TraceFromStack],
+		monitorAPI.TraceObservationPoints[monitorAPI.TraceFromCrypto],
 		monitorAPI.TraceObservationPoints[monitorAPI.TraceToLxc],
 		monitorAPI.TraceObservationPoints[monitorAPI.TraceToHost],
 		monitorAPI.TraceObservationPoints[monitorAPI.TraceToNetwork],
 		monitorAPI.TraceObservationPoints[monitorAPI.TraceToOverlay],
 		monitorAPI.TraceObservationPoints[monitorAPI.TraceToProxy],
 		monitorAPI.TraceObservationPoints[monitorAPI.TraceToStack],
+		monitorAPI.TraceObservationPoints[monitorAPI.TraceToCrypto],
 	},
 	monitorAPI.MessageTypeNameL7:            nil,
 	monitorAPI.MessageTypeNamePolicyVerdict: nil,
@@ -166,7 +170,7 @@ var GetHubbleClientFunc = func(ctx context.Context, vp *viper.Viper) (client obs
 	if err != nil {
 		return nil, nil, err
 	}
-	logger.Logger.Debug("connected to Hubble API", "server", config.KeyServer)
+	logger.Logger.Debug("connected to Hubble API", logfields.Server, config.KeyServer)
 	cleanup = hubbleConn.Close
 	client = observerpb.NewObserverClient(hubbleConn)
 	return client, cleanup, nil
@@ -303,9 +307,17 @@ func newFlowsCmdHelper(usage cmdUsage, vp *viper.Viper, ofilter *flowFilter) *co
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			debug := vp.GetBool(config.KeyDebug)
+			// fmt.Printf("ofilter0 = %+v \n", ofilter.whitelist)
 			if err := handleFlowArgs(cmd.OutOrStdout(), ofilter, debug); err != nil {
 				return err
 			}
+			// CC
+
+			err := ccpVerifyNamespace(context.Background(), vp, ofilter)
+			if err != nil {
+				return err
+			}
+
 			req, err := getFlowsRequest(ofilter, vp.GetStringSlice(allowlistFlag), vp.GetStringSlice(denylistFlag))
 			if err != nil {
 				return err
@@ -328,7 +340,7 @@ func newFlowsCmdHelper(usage cmdUsage, vp *viper.Viper, ofilter *flowFilter) *co
 			}
 			defer cleanup()
 
-			logger.Logger.Debug("Sending GetFlows request", "request", req)
+			logger.Logger.Debug("Sending GetFlows request", logfields.Request, req)
 			if err := getFlows(ctx, client, req); err != nil {
 				msg := err.Error()
 				// extract custom error message from failed grpc call
@@ -469,6 +481,7 @@ func newFlowsCmdHelper(usage cmdUsage, vp *viper.Viper, ofilter *flowFilter) *co
 	filterFlags.VarP(filterVarP(
 		"namespace", "n", ofilter, nil,
 		"Show all flows related to the given Kubernetes namespace."))
+
 	filterFlags.Var(filterVar(
 		"to-namespace", ofilter,
 		"Show all flows terminating in the given Kubernetes namespace."))
@@ -865,4 +878,61 @@ func getFlows(ctx context.Context, client observerpb.ObserverClient, req *observ
 			return err
 		}
 	}
+}
+
+const HUBBLE_NODEPORT = "9924"
+
+func getCurrentContext() (string, error) {
+	homedir, err := os.UserHomeDir()
+	filename := homedir + "/.kube/config"
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", fmt.Errorf("reading kubeconfig %s - %v", filename, err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "current-context:") {
+			parts := strings.Split(line, " ")
+			return parts[1], nil
+		}
+	}
+	return "", fmt.Errorf("CurrentContext not found in %s", filename)
+}
+
+// use token to call rdei, get list of allowed namespaces, validate against whitelist
+// export CCP_TOKEN=..
+// export CCP_CLUSTER=bglab-ccpcon-stage-01
+// hubble observe -n  tenant-20-istio-bookinfo -f
+func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilter) error {
+
+	//  find the node of the kube-system:hubble-relay-xx pod and use it as system:nodeport=9924
+
+	if ofilter.whitelist == nil || len(ofilter.whitelist.ns) != 1 {
+		return fmt.Errorf("Error: --namespace(-n) is required")
+	}
+	cluster, err := getCurrentContext()
+	if err != nil {
+		return err
+	}
+	token := os.Getenv("CCP_TOKEN")
+	if cluster == "" {
+		return fmt.Errorf("currentContext not defined")
+	}
+	if token == "" {
+		return fmt.Errorf("env-var CCP_TOKEN is required")
+	}
+
+	namespace := ofilter.whitelist.ns[0]
+
+	hubbleNode, err := conn.ValidateHubbleInfo(cluster, ctx, vp, namespace)
+	if err != nil {
+		return fmt.Errorf("Error: %v", err)
+	}
+	vp.Set("server", hubbleNode+":"+HUBBLE_NODEPORT)
+
+	fmt.Printf("Validated cluster:%s, namespace=%s \n", cluster, namespace)
+	return nil
 }

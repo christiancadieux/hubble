@@ -908,11 +908,25 @@ func getCurrentContext() (string, error) {
 // hubble observe -n  tenant-20-istio-bookinfo -f
 func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilter) error {
 
-	//  find the node of the kube-system:hubble-relay-xx pod and use it as system:nodeport=9924
-
-	if ofilter.whitelist == nil || len(ofilter.whitelist.ns) != 1 {
-		return fmt.Errorf("Error: --namespace(-n) is required")
+	msg := "one of --namespace[-n], --from-namespace or --to-namespace is required"
+	if ofilter.whitelist == nil {
+		return fmt.Errorf(msg)
 	}
+	ns := ofilter.whitelist.ns
+	srcNs := ofilter.whitelist.srcNs
+	dstNs := ofilter.whitelist.dstNs
+
+	namespace := ""
+	if len(ns) == 1 {
+		namespace = ns[0]
+	} else if len(srcNs) == 1 {
+		namespace = srcNs[0]
+	} else if len(dstNs) == 1 {
+		namespace = dstNs[0]
+	} else {
+		return fmt.Errorf(msg)
+	}
+
 	cluster, err := getCurrentContext()
 	if err != nil {
 		return err
@@ -924,8 +938,6 @@ func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilte
 	if token == "" {
 		return fmt.Errorf("env-var CCP_TOKEN is required")
 	}
-
-	namespace := ofilter.whitelist.ns[0]
 
 	hubbleNode, err := conn.ValidateHubbleInfo(cluster, ctx, vp, namespace)
 	if err != nil {

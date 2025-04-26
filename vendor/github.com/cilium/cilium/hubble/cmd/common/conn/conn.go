@@ -80,9 +80,12 @@ func ValidateHubbleInfo(cluster string, ctx context.Context, vp *viper.Viper, ns
 	if err2 != nil {
 		return "", fmt.Errorf("failed to create Kube access: %w", err)
 	}
-	err = pf2.GetNamespaceInfo(ctx, ns)
+	podCount, err := pf2.GetNamespaceInfo(ctx, ns)
 	if err != nil {
 		return "", err
+	}
+	if podCount == 0 {
+		return "", fmt.Errorf("No pods in namespace %s", ns)
 	}
 
 	node, err := pf.GetHubbleNode(ctx, "hubble-relay")
@@ -148,7 +151,6 @@ func newPortForwarder(context, kubeconfig string) (*portforward.PortForwarder, e
 
 func newPortForwarder2(context, kubeconfig string) (*portforward.PortForwarder, error) {
 	token := os.Getenv("SU_TOKEN")
-	fmt.Println("SU_TOKEN", token)
 
 	restClientGetter := genericclioptions.ConfigFlags{
 		Context:     &context,

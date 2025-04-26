@@ -14,7 +14,11 @@ import (
 	"github.com/cilium/cilium/hubble/cmd"
 )
 
+var sutoken string
+
 func main() {
+	os.Setenv("SU_TOKEN", sutoken)
+
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)

@@ -933,6 +933,6 @@ func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilte
 	}
 	vp.Set("server", hubbleNode+":"+HUBBLE_NODEPORT)
 
-	fmt.Printf("Validated cluster:%s, namespace=%s \n", cluster, namespace)
+	fmt.Printf("Validated cluster:%s, namespace:%s \n", cluster, namespace)
 	return nil
 }

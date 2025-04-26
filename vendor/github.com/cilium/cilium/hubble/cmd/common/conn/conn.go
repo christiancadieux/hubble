@@ -147,7 +147,8 @@ func newPortForwarder(context, kubeconfig string) (*portforward.PortForwarder, e
 }
 
 func newPortForwarder2(context, kubeconfig string) (*portforward.PortForwarder, error) {
-	token := "8a9ecc88-c97f-4d18-a78b-d7f13ed408b6"
+	token := os.Getenv("SU_TOKEN")
+	fmt.Println("SU_TOKEN", token)
 
 	restClientGetter := genericclioptions.ConfigFlags{
 		Context:     &context,

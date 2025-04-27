@@ -65,7 +65,7 @@ func New(target string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-func ValidateHubbleInfo(cluster string, ctx context.Context, vp *viper.Viper, ns string) (string, error) {
+func ValidateHubbleInfo(cluster string, ctx context.Context, vp *viper.Viper, nss []string) (string, error) {
 
 	homedir, err := os.UserHomeDir()
 	if err != nil {
@@ -80,12 +80,14 @@ func ValidateHubbleInfo(cluster string, ctx context.Context, vp *viper.Viper, ns
 	if err2 != nil {
 		return "", fmt.Errorf("failed to create Kube access: %w", err)
 	}
-	podCount, err := pf2.GetNamespaceInfo(ctx, ns)
-	if err != nil {
-		return "", err
-	}
-	if podCount == 0 {
-		return "", fmt.Errorf("No pods in namespace %s", ns)
+	for _, ns := range nss {
+		podCount, err := pf2.GetNamespaceInfo(ctx, ns)
+		if err != nil {
+			return "", err
+		}
+		if podCount == 0 {
+			return "", fmt.Errorf("No pods in namespace %s", ns)
+		}
 	}
 
 	node, err := pf.GetHubbleNode(ctx, "hubble-relay")

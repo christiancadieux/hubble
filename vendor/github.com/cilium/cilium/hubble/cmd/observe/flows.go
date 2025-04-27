@@ -904,7 +904,6 @@ func getCurrentContext() (string, error) {
 
 // use token to call rdei, get list of allowed namespaces, validate against whitelist
 // export CCP_TOKEN=..
-// export CCP_CLUSTER=bglab-ccpcon-stage-01
 // hubble observe -n  tenant-20-istio-bookinfo -f
 func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilter) error {
 
@@ -916,13 +915,17 @@ func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilte
 	srcNs := ofilter.whitelist.srcNs
 	dstNs := ofilter.whitelist.dstNs
 
-	namespace := ""
+	namespaces := []string{}
 	if len(ns) == 1 {
-		namespace = ns[0]
-	} else if len(srcNs) == 1 {
-		namespace = srcNs[0]
-	} else if len(dstNs) == 1 {
-		namespace = dstNs[0]
+		namespaces = append(namespaces, ns[0])
+
+	} else if len(srcNs) == 1 || len(dstNs) == 1 {
+		if len(srcNs) == 1 {
+			namespaces = append(namespaces, srcNs[0])
+		}
+		if len(dstNs) == 1 {
+			namespaces = append(namespaces, dstNs[0])
+		}
 	} else {
 		return fmt.Errorf(msg)
 	}
@@ -939,12 +942,12 @@ func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilte
 		return fmt.Errorf("env-var CCP_TOKEN is required")
 	}
 
-	hubbleNode, err := conn.ValidateHubbleInfo(cluster, ctx, vp, namespace)
+	hubbleNode, err := conn.ValidateHubbleInfo(cluster, ctx, vp, namespaces)
 	if err != nil {
 		return fmt.Errorf("Error: %v", err)
 	}
 	vp.Set("server", hubbleNode+":"+HUBBLE_NODEPORT)
 
-	fmt.Printf("Validated cluster:%s, namespace:%s \n", cluster, namespace)
+	fmt.Printf("Validated cluster:%s, namespaces: %v \n", cluster, namespaces)
 	return nil
 }

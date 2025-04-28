@@ -907,7 +907,7 @@ func getCurrentContext() (string, error) {
 // hubble observe -n  tenant-20-istio-bookinfo -f
 func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilter) error {
 
-	msg := "one of --namespace[-n], --from-namespace or --to-namespace is required"
+	msg := "--namespace[-n], --from-namespace and/or --to-namespace is required"
 	if ofilter.whitelist == nil {
 		return fmt.Errorf(msg)
 	}
@@ -918,6 +918,9 @@ func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilte
 	namespaces := []string{}
 	if len(ns) == 1 {
 		namespaces = append(namespaces, ns[0])
+
+	} else if len(srcNs) > 1 || len(dstNs) > 1 {
+		return fmt.Errorf(msg)
 
 	} else if len(srcNs) == 1 || len(dstNs) == 1 {
 		if len(srcNs) == 1 {

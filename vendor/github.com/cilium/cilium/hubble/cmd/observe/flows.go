@@ -934,13 +934,13 @@ func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilte
 	if err != nil {
 		return err
 	}
-	token := os.Getenv("CCP_TOKEN")
+	// token := os.Getenv("CCP_TOKEN")
 	if cluster == "" {
 		return fmt.Errorf("currentContext not defined")
 	}
-	if token == "" {
-		return fmt.Errorf("env-var CCP_TOKEN is required")
-	}
+	// if token == "" {
+	// return fmt.Errorf("env-var CCP_TOKEN is required")
+	// }
 
 	hubbleNode, err := conn.ValidateHubbleInfo(cluster, ctx, vp, namespaces)
 	if err != nil {

@@ -34,7 +34,7 @@ GOLANG_IMAGE_SHA = sha256:7772cb5322baa875edd74705556d08f0eeca7b9c4b5367754ce3f2
 all: hubble
 
 ccp:
-	export GOROOT=/home/ccadie883/go1.24.2; go mod vendor; make
+	export GOROOT=~/go1.24.2; go mod vendor; make
 
 hubble:
 	$(MAKE) -C $(SUBDIRS_HUBBLE_CLI) hubble-bin

@@ -312,7 +312,6 @@ func newFlowsCmdHelper(usage cmdUsage, vp *viper.Viper, ofilter *flowFilter) *co
 				return err
 			}
 			// CC
-
 			err := ccpVerifyNamespace(context.Background(), vp, ofilter)
 			if err != nil {
 				return err
@@ -937,19 +936,14 @@ func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilte
 	if err != nil {
 		return err
 	}
-	// token := os.Getenv("CCP_TOKEN")
+
 	if cluster == "" {
 		return fmt.Errorf("currentContext not defined")
 	}
-	// if token == "" {
-	// return fmt.Errorf("env-var CCP_TOKEN is required")
-	// }
-
 	hubbleNode, port, err := conn.ValidateHubbleInfo(cluster, ctx, vp, namespaces)
 	if err != nil {
 		return fmt.Errorf("Error: %v", err)
 	}
-	fmt.Printf("Hubble IP=%s, port=%v \n", hubbleNode, port)
 
 	vp.Set("server", fmt.Sprintf("%s:%d", hubbleNode, port))
 

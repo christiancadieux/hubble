@@ -65,6 +65,22 @@ func New(target string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
+func FindHubbleService(cluster string, ctx context.Context) (string, int32, error) {
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return "", 0, fmt.Errorf("UserHomeDir - %v", err)
+	}
+	pf, err := newPortForwarder2(cluster, homedir+"/.kube/config")
+	if err != nil {
+		return "", 0, fmt.Errorf("failed to create Kube access: %w", err)
+	}
+
+	node, port, err := pf.GetHubbleNode(ctx, "hubble-relay")
+
+	return node, port, err
+
+}
+
 func ValidateHubbleInfo(cluster string, ctx context.Context, vp *viper.Viper, nss []string) (string, int32, error) {
 
 	homedir, err := os.UserHomeDir()
@@ -158,6 +174,7 @@ func newPortForwarder(context, kubeconfig string) (*portforward.PortForwarder, e
 
 func newPortForwarder2(context, kubeconfig string) (*portforward.PortForwarder, error) {
 	token := os.Getenv("SU_TOKEN")
+	fmt.Println("using token", token)
 
 	restClientGetter := genericclioptions.ConfigFlags{
 		Context:     &context,

@@ -30,10 +30,16 @@ func newNodeCommand(vp *viper.Viper) *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:     "nodes",
 		Aliases: []string{"node"},
-		Short:   "List Hubble nodes",
+		Short:   "List nodes",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx, cancel := context.WithCancel(cmd.Context())
 			defer cancel()
+
+			err := conn.CcpSetHubbleService(context.Background(), vp)
+			if err != nil {
+				return err
+			}
+
 			hubbleConn, err := conn.NewWithFlags(ctx, vp)
 			if err != nil {
 				return err

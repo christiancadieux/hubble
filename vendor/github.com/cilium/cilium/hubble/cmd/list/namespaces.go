@@ -27,6 +27,12 @@ func newNamespacesCommand(vp *viper.Viper) *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx, cancel := context.WithCancel(cmd.Context())
 			defer cancel()
+
+			err := conn.CcpSetHubbleService(context.Background(), vp)
+			if err != nil {
+				return err
+			}
+
 			hubbleConn, err := conn.NewWithFlags(ctx, vp)
 			if err != nil {
 				return err

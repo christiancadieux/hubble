@@ -40,7 +40,7 @@ hubble:
 	$(MAKE) -C $(SUBDIRS_HUBBLE_CLI) hubble-bin
 
 hubble-bin:
-	$(GO_BUILD) $(if $(GO_TAGS),-tags $(GO_TAGS)) -ldflags "-w -s -X 'main.sutoken=${SU_TOKEN}' -X 'github.com/cilium/cilium/hubble/pkg.GitBranch=${GIT_BRANCH}' -X 'github.com/cilium/cilium/hubble/pkg.GitHash=$(GIT_HASH)' -X 'github.com/cilium/cilium/hubble/pkg.Version=${VERSION}'" -o $(TARGET) $(SUBDIRS_HUBBLE_CLI)
+	$(GO_BUILD) $(if $(GO_TAGS),-tags $(GO_TAGS)) -ldflags "-w -s -X 'main.sutoken=${TOKEN}' -X 'github.com/cilium/cilium/hubble/pkg.GitBranch=${GIT_BRANCH}' -X 'github.com/cilium/cilium/hubble/pkg.GitHash=$(GIT_HASH)' -X 'github.com/cilium/cilium/hubble/pkg.Version=${VERSION}'" -o $(TARGET) $(SUBDIRS_HUBBLE_CLI)
 
 release:
 	$(CONTAINER_ENGINE) run --rm --workdir /hubble --volume `pwd`:/hubble docker.io/library/golang:$(GOLANG_IMAGE_VERSION)@$(GOLANG_IMAGE_SHA) \

@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"github.com/cilium/cilium/hubble/cmd/list"
+	"github.com/cilium/cilium/hubble/cmd/status"
 	"log/slog"
 	"os"
 
@@ -15,14 +17,8 @@ import (
 	"github.com/cilium/cilium/hubble/cmd/common/conn"
 	"github.com/cilium/cilium/hubble/cmd/common/template"
 	"github.com/cilium/cilium/hubble/cmd/common/validate"
-	cmdConfig "github.com/cilium/cilium/hubble/cmd/config"
-	"github.com/cilium/cilium/hubble/cmd/list"
 	"github.com/cilium/cilium/hubble/cmd/observe"
-	"github.com/cilium/cilium/hubble/cmd/record"
-	"github.com/cilium/cilium/hubble/cmd/reflect"
-	"github.com/cilium/cilium/hubble/cmd/status"
 	"github.com/cilium/cilium/hubble/cmd/version"
-	"github.com/cilium/cilium/hubble/cmd/watch"
 	"github.com/cilium/cilium/hubble/pkg"
 	"github.com/cilium/cilium/hubble/pkg/logger"
 	"github.com/cilium/cilium/pkg/logging/logfields"
@@ -95,14 +91,14 @@ func NewWithViper(vp *viper.Viper) *cobra.Command {
 	rootCmd.SetVersionTemplate("{{with .Name}}{{printf \"%s \" .}}{{end}}{{printf \"%s\" .Version}}\r\n")
 
 	rootCmd.AddCommand(
-		cmdConfig.New(vp),
+		// cmdConfig.New(vp),
 		list.New(vp),
 		observe.New(vp),
-		record.New(vp),
-		reflect.New(vp),
+		// record.New(vp),
+		// reflect.New(vp),
 		status.New(vp),
 		version.New(),
-		watch.New(vp),
+		// watch.New(vp),
 	)
 
 	return rootCmd

@@ -23,7 +23,7 @@ var listOpts struct {
 func New(vp *viper.Viper) *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:   "list",
-		Short: "List nodes",
+		Short: "List cilium Objects",
 	}
 
 	// add config.ServerFlags to the help template as these flags are used by
@@ -32,7 +32,7 @@ func New(vp *viper.Viper) *cobra.Command {
 
 	listCmd.AddCommand(
 		newNodeCommand(vp),
-		// newNamespacesCommand(vp),
+		newNamespacesCommand(vp),
 	)
 	return listCmd
 }

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -28,6 +29,8 @@ func newNamespacesCommand(vp *viper.Viper) *cobra.Command {
 			ctx, cancel := context.WithCancel(cmd.Context())
 			defer cancel()
 
+			fmt.Println("Command not allowed")
+			os.Exit(0)
 			err := conn.CcpSetHubbleService(context.Background(), vp)
 			if err != nil {
 				return err

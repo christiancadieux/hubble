@@ -94,11 +94,11 @@ func NewWithViper(vp *viper.Viper) *cobra.Command {
 		// cmdConfig.New(vp),
 		list.New(vp),
 		observe.New(vp),
-		// record.New(vp),
-		// reflect.New(vp),
+		// record.New(vp),  // not
+		// reflect.New(vp), // not
 		status.New(vp),
 		version.New(),
-		// watch.New(vp),
+		// watch.New(vp), // not
 	)
 
 	return rootCmd

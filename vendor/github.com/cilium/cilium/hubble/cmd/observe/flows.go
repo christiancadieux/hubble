@@ -949,6 +949,7 @@ func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilte
 	if err != nil {
 		return fmt.Errorf("Error: %v", err)
 	}
+	fmt.Printf("Hubble IP=%s, port=%v \n", hubbleNode, port)
 
 	vp.Set("server", fmt.Sprintf("%s:%d", hubbleNode, port))
 

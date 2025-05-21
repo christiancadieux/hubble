@@ -945,11 +945,12 @@ func ccpVerifyNamespace(ctx context.Context, vp *viper.Viper, ofilter *flowFilte
 	// return fmt.Errorf("env-var CCP_TOKEN is required")
 	// }
 
-	hubbleNode, err := conn.ValidateHubbleInfo(cluster, ctx, vp, namespaces)
+	hubbleNode, port, err := conn.ValidateHubbleInfo(cluster, ctx, vp, namespaces)
 	if err != nil {
 		return fmt.Errorf("Error: %v", err)
 	}
-	vp.Set("server", hubbleNode+":"+HUBBLE_NODEPORT)
+
+	vp.Set("server", fmt.Sprintf("%s:%d", hubbleNode, port))
 
 	fmt.Printf("Validated cluster:%s, namespaces: %v \n", cluster, namespaces)
 	return nil

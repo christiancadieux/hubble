@@ -65,39 +65,39 @@ func New(target string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-func ValidateHubbleInfo(cluster string, ctx context.Context, vp *viper.Viper, nss []string) (string, error) {
+func ValidateHubbleInfo(cluster string, ctx context.Context, vp *viper.Viper, nss []string) (string, int32, error) {
 
 	homedir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("UserHomeDir - %v", err)
+		return "", 0, fmt.Errorf("UserHomeDir - %v", err)
 	}
 	pf, err := newPortForwarder2(cluster, homedir+"/.kube/config")
 	if err != nil {
-		return "", fmt.Errorf("failed to create Kube access: %w", err)
+		return "", 0, fmt.Errorf("failed to create Kube access: %w", err)
 	}
 
 	pf2, err2 := newPortForwarder(cluster, homedir+"/.kube/config")
 	if err2 != nil {
-		return "", fmt.Errorf("failed to create Kube access: %w", err)
+		return "", 0, fmt.Errorf("failed to create Kube access: %w", err)
 	}
 	// if there are 2 namespaces, only one need to be accessible
 	errors := []error{}
 	for _, ns := range nss {
 		podCount, err := pf2.GetNamespaceInfo(ctx, ns)
 		if err == nil && podCount == 0 {
-			return "", fmt.Errorf("No pods in namespace %s", ns)
+			return "", 0, fmt.Errorf("No pods in namespace %s", ns)
 		}
 		if err != nil {
 			errors = append(errors, err)
 		}
 	}
 	if len(errors) > 1 {
-		return "", errors[0]
+		return "", 0, errors[0]
 	}
 
-	node, err := pf.GetHubbleNode(ctx, "hubble-relay")
+	node, port, err := pf.GetHubbleNode(ctx, "hubble-relay")
 
-	return node, err
+	return node, port, err
 
 }
 
